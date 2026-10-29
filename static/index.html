@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BiliPlayer</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div id="app">
+  <aside id="side">
+    <div class="brand">
+      <span class="logo"></span>
+      <div class="who">
+        <b>BiliPlayer</b>
+        <small id="who">未登录</small>
+      </div>
+    </div>
+
+    <div class="side-scroll">
+      <nav id="cats"></nav>
+    </div>
+
+    <div class="side-foot">
+      <div id="stats">—</div>
+      <button id="btn-sync" class="ghost">更新订阅</button>
+      <button id="btn-quit" class="ghost subtle">退出</button>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <div class="tabs">
+        <button class="tab active" data-view="home">首页</button>
+        <button class="tab" data-view="timeline">最新</button>
+        <button class="tab" data-view="ups">按人看</button>
+        <button class="tab" data-view="recent">看过</button>
+      </div>
+      <div class="tools">
+        <div id="ups-sort" class="tseg hidden">
+          <button data-sort="new">最近更新</button>
+          <button data-sort="old">最久没更新</button>
+        </div>
+        <select id="days">
+          <option value="0">全部</option>
+          <option value="2">近 2 天</option>
+          <option value="7" selected>近 7 天</option>
+          <option value="15">近 15 天</option>
+          <option value="30">近 30 天</option>
+        </select>
+        <input id="search" type="search" placeholder="搜标题 / UP 名" autocomplete="off">
+        <button id="btn-limit" class="chip" title="同一个 UP 在列表里最多占几张卡">每人 2 条</button>
+      </div>
+    </header>
+
+    <div id="synctip" class="hidden">
+      <div class="bar"><i></i></div>
+      <span id="sync-text"></span>
+    </div>
+
+    <div id="recbar" class="hidden">
+      <div class="rec-head">
+        <div>
+          <span class="rec-title">这个分类里，你没关注的人在发什么</span>
+          <span id="rec-sub" class="rec-sub"></span>
+        </div>
+        <button id="rec-shuffle">换一批</button>
+      </div>
+      <div id="recs" class="grid slim"></div>
+    </div>
+
+    <div id="home" class="hidden"></div>
+
+    <div id="ups-tip" class="ups-tip hidden"></div>
+    <section id="list" class="grid"></section>
+    <div id="empty" class="empty hidden"></div>
+  </main>
+</div>
+
+<div id="player" class="hidden">
+  <video id="video" playsinline></video>
+  <canvas id="dm"></canvas>
+  <div class="p-loading" id="p-loading"><span></span></div>
+
+  <div class="p-top">
+    <div class="p-head">
+      <div class="p-title" id="p-title"></div>
+      <div class="p-sub hidden" id="p-sub">
+        <span id="p-upname"></span>
+        <button id="p-catchip" class="p-catchip" title="改这个 UP 的分类"></button>
+      </div>
+    </div>
+    <div class="p-topbtns">
+      <button id="p-side-btn" class="p-ext" title="评论与相关推荐 (Tab)">
+        评论
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path d="M2.4 3.4h11.2v7.4H7.6L4.4 13.4v-2.6H2.4z" fill="none"
+                stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button id="p-ext" class="p-ext" title="在 B 站网页打开（有评论、弹幕、历史记录）">
+        在 B 站打开
+        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+          <path d="M6 3h7v7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M13 3L6.5 9.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M11 10v2.2c0 .5-.4.8-.8.8H4.8c-.4 0-.8-.3-.8-.8V6.8c0-.4.4-.8.8-.8H7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button id="p-close" title="关闭 (Esc)">✕</button>
+    </div>
+  </div>
+
+  <div class="p-next hidden" id="p-next">
+    <div class="p-next-txt"><b>接下来</b><span id="p-next-title"></span></div>
+    <div class="p-next-btns">
+      <button id="p-next-go">马上播</button>
+      <button id="p-next-cancel">先不了</button>
+    </div>
+  </div>
+
+  <!-- 右侧：评论 / 推荐 -->
+  <aside id="p-side" class="hidden">
+    <div class="side-tabs">
+      <button class="st active" data-st="dm">弹幕列表</button>
+      <button class="st" data-st="cm">评论</button>
+      <button class="st" data-st="rel">相关</button>
+      <button id="p-side-close" title="关闭">✕</button>
+    </div>
+    <div class="side-body" id="side-dm"></div>
+    <div class="side-body hidden" id="side-cm"></div>
+    <div class="side-body hidden" id="side-rel"></div>
+  </aside>
+
+  <!-- 设置面板 -->
+  <aside id="p-set" class="hidden">
+    <div class="set-head">
+      <span>播放器设置</span>
+      <button id="set-close" title="关闭">✕</button>
+    </div>
+    <div class="set-tabs">
+      <button class="stab active" data-se="play">播放</button>
+      <button class="stab" data-se="dm">弹幕</button>
+      <button class="stab" data-se="keys">快捷键</button>
+    </div>
+    <div class="set-body" id="set-body"></div>
+  </aside>
+
+  <div class="p-ctrl" id="p-ctrl">
+    <div class="p-progress" id="p-progress">
+      <div class="p-buf" id="p-buf"></div>
+      <div class="p-play" id="p-played"></div>
+      <div class="p-knob" id="p-knob"></div>
+    </div>
+    <div id="p-tip" class="hidden">
+      <div class="p-tip-img" id="p-tip-img"></div>
+      <span id="p-tip-time">0:00</span>
+    </div>
+    <div class="p-row">
+      <button id="p-prev" title="上一个">⏮</button>
+      <button id="p-toggle">▶</button>
+      <button id="p-nextbtn" title="下一个">⏭</button>
+      <span id="p-time">0:00 / 0:00</span>
+
+      <select id="p-part" class="hidden" title="分P"></select>
+
+      <div class="p-spacer"></div>
+
+      <button id="p-dm" class="p-dm on" title="弹幕 (C)">弹</button>
+      <select id="p-rate" title="播放速度"></select>
+      <select id="p-quality" title="清晰度"></select>
+
+      <button id="p-pip" title="画中画 (P)">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+          <rect x="1.5" y="3" width="13" height="10" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <rect x="8.2" y="7.6" width="4.8" height="3.6" rx=".9" fill="currentColor"/>
+        </svg>
+      </button>
+      <button id="p-shot" title="截图 (S)">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+          <path d="M2 5.6h2.6l1-1.6h4.8l1 1.6H14v7.2H2z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+          <circle cx="8" cy="9" r="2.2" fill="none" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+      </button>
+      <button id="p-set-btn" title="设置">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+          <circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M8 1.9v1.7M8 12.4v1.7M1.9 8h1.7M12.4 8h1.7M3.7 3.7l1.2 1.2M11.1 11.1l1.2 1.2M12.3 3.7l-1.2 1.2M4.9 11.1l-1.2 1.2"
+                fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <button id="p-mute">🔊</button>
+      <input id="p-vol" type="range" min="0" max="1" step="0.02" value="1">
+      <button id="p-full">⤢</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// 出错别只是白屏，把错误顶在页面上，省得只能靠猜
+window.addEventListener('error', function (e) {
+  var d = document.getElementById('errbar');
+  if (!d) {
+    d = document.createElement('div');
+    d.id = 'errbar';
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#c0392b;' +
+      'color:#fff;font:12px/1.7 ui-monospace,Consolas,monospace;padding:8px 14px;white-space:pre-wrap';
+    (document.body || document.documentElement).appendChild(d);
+  }
+  d.textContent = (d.textContent ? d.textContent + '\n' : '') +
+    (e.message || e.error) + '  @' + (e.filename || '').split('/').pop() + ':' + (e.lineno || '');
+});
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e.reason || {};
+  var d = document.getElementById('errbar');
+  if (!d) {
+    d = document.createElement('div');
+    d.id = 'errbar';
+    d.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#c0392b;' +
+      'color:#fff;font:12px/1.7 ui-monospace,Consolas,monospace;padding:8px 14px;white-space:pre-wrap';
+    (document.body || document.documentElement).appendChild(d);
+  }
+  d.textContent = (d.textContent ? d.textContent + '\n' : '') + 'Promise 未处理：' + (r.message || r);
+});
+</script>
+<!-- 改分类的小弹层：播放器顶上的分类标签、按人看里的标签都调它 -->
+<div id="cat-pop" class="hidden">
+  <div class="cat-box">
+    <h4 id="cat-who">改分类</h4>
+    <div class="who" id="cat-hint"></div>
+    <div class="cat-grid" id="cat-grid"></div>
+    <div class="cat-foot">
+      <a id="cat-auto">恢复自动分类</a>
+      <a id="cat-cancel">取消</a>
+    </div>
+  </div>
+</div>
+<script src="/static/dash.all.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

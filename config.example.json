@@ -1,0 +1,8 @@
+{
+  "sessdata": "",
+  "port": 8791,
+  "sync_pages": 40,
+  "request_interval": 1.0,
+  "per_up_limit": 2,
+  "qn": 112
+}

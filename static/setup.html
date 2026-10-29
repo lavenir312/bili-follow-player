@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BiliPlayer · 连接账号</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --line:#e9ebef;
+    --text:#18191c; --sub:#7a808a; --dim:#a9aeb6; --pink:#fb7299;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;min-height:100vh;background:var(--bg);color:var(--text);
+    font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:40px 20px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .card{
+    width:100%;max-width:560px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;padding:34px 38px 30px;box-shadow:0 1px 3px rgba(20,22,26,.04);
+  }
+  .logo{
+    width:34px;height:34px;border-radius:10px;background:var(--pink);
+    position:relative;margin-bottom:18px;
+  }
+  .logo::after{
+    content:"";position:absolute;inset:0;margin:auto;width:0;height:0;
+    border-left:11px solid #fff;border-top:7px solid transparent;
+    border-bottom:7px solid transparent;transform:translateX(2px);
+  }
+  h1{font-size:19px;font-weight:600;margin:0 0 8px;letter-spacing:.2px}
+  .sub{color:var(--sub);font-size:13px;margin:0 0 22px}
+  .steps{
+    margin:0 0 18px;padding:16px 18px 16px 34px;background:#fafbfc;
+    border:1px solid var(--line);border-radius:10px;font-size:12.5px;
+    line-height:2;color:#464b52;
+  }
+  .steps li::marker{color:var(--dim)}
+  .steps a{color:var(--pink);text-decoration:none}
+  .steps b{font-weight:600;color:#1f2126}
+  kbd{
+    font:11px/1 ui-monospace,Consolas,monospace;background:#eff1f4;
+    border:1px solid #dfe3e8;border-bottom-width:2px;border-radius:4px;
+    padding:2px 5px;color:#464b52;
+  }
+  textarea{
+    width:100%;height:78px;resize:vertical;padding:10px 12px;
+    border:1px solid var(--line);border-radius:9px;background:#fcfcfd;
+    font:12px/1.6 ui-monospace,Consolas,monospace;color:#333;outline:none;
+    word-break:break-all;
+  }
+  textarea:focus{border-color:var(--pink);background:#fff}
+  .row{display:flex;gap:14px;margin:14px 0 4px;flex-wrap:wrap}
+  .row label{font-size:12.5px;color:var(--sub);display:flex;align-items:center;gap:7px}
+  select{
+    font:12.5px/1 inherit;padding:6px 8px;border:1px solid var(--line);
+    border-radius:7px;background:#fff;color:var(--text);outline:none;
+  }
+  #go{
+    width:100%;margin-top:20px;padding:11px;border:none;border-radius:9px;
+    background:var(--pink);color:#fff;font-size:14px;font-weight:500;cursor:pointer;
+    transition:.15s;
+  }
+  #go:hover{filter:brightness(1.06)}
+  #go:disabled{opacity:.55;cursor:default;filter:none}
+  #msg{margin-top:14px;font-size:12.5px;line-height:1.9;color:var(--sub);min-height:20px}
+  #msg.err{color:#d0402f}
+  #msg.ok{color:#1a9c62}
+  .bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:12px;display:none}
+  .bar.on{display:block}
+  .bar i{display:block;height:100%;width:0;background:var(--pink);transition:width .35s}
+  .skip{display:none;margin-top:10px;font-size:12px}
+  .skip a{color:var(--pink);text-decoration:none;cursor:pointer}
+  .foot{margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+    font-size:11.5px;color:var(--dim);line-height:1.9}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo"></div>
+  <h1>先连上你的 B 站账号</h1>
+  <p class="sub">BiliPlayer 跑在你自己的电脑上，不经过任何服务器。它只要一份登录凭据，
+    用来读你的关注列表和取视频地址，不会替你发任何东西。</p>
+
+  <ol class="steps">
+    <li>浏览器里登录 <a href="https://www.bilibili.com" target="_blank">bilibili.com</a></li>
+    <li>按 <kbd>F12</kbd> 打开开发者工具，切到 <b>Application</b>（应用）</li>
+    <li>左边 <b>Storage → Cookies → https://www.bilibili.com</b></li>
+    <li>找到 <b>SESSDATA</b>，双击它那行的 Value，全选复制</li>
+  </ol>
+
+  <textarea id="sess" placeholder="把 SESSDATA 的值粘在这里（很长，正常）" spellcheck="false"></textarea>
+
+  <div class="row">
+    <label>同步页数
+      <select id="pages">
+        <option value="20">20 页（快，约 400 条动态）</option>
+        <option value="40" selected>40 页（推荐）</option>
+        <option value="80">80 页（追很久以前的）</option>
+      </select>
+    </label>
+    <label>清晰度
+      <select id="qn">
+        <option value="112">最高</option>
+        <option value="80">1080P</option>
+        <option value="64">720P</option>
+      </select>
+    </label>
+  </div>
+
+  <button id="go">连接并读取关注</button>
+  <div class="bar" id="bar"><i></i></div>
+  <div id="msg"></div>
+  <div class="skip" id="skip"><a id="skiplink">不等了，直接进去</a></div>
+
+  <div class="foot">
+    凭据只写在本目录的 <code>config.json</code> 里，跟这个程序放在一起。
+    想换账号就重新访问 <code>/setup</code>；想彻底清掉就删掉 <code>config.json</code>。
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let syncing = false;
+
+function say(text, cls) {
+  const m = $('#msg');
+  m.textContent = text || '';
+  m.className = cls || '';
+}
+
+async function start() {
+  const sess = $('#sess').value.trim();
+  if (!sess) { say('先把 SESSDATA 粘进来', 'err'); $('#sess').focus(); return; }
+  $('#go').disabled = true;
+  say('正在验证…');
+  try {
+    const r = await fetch('/api/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessdata: sess,
+        sync_pages: Number($('#pages').value),
+        qn: Number($('#qn').value),
+      }),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      say(d.error || '验证没通过，多半是 SESSDATA 复制不完整或已经过期', 'err');
+      $('#go').disabled = false;
+      return;
+    }
+    say(`连上了：${d.user.uname}。正在读取关注列表，第一次要几分钟…`, 'ok');
+    $('#bar').classList.add('on');
+    $('#skip').style.display = 'block';
+    poll();
+  } catch (e) {
+    say('请求失败：' + e.message, 'err');
+    $('#go').disabled = false;
+  }
+}
+
+async function poll() {
+  if (syncing) return;
+  syncing = true;
+  let last = '';
+  while (true) {
+    let d;
+    try {
+      const r = await fetch('/api/sync', { cache: 'no-store' });
+      d = await r.json();
+    } catch (e) {
+      await new Promise((r) => setTimeout(r, 1500));
+      continue;
+    }
+    const total = d.total || 0;
+    const done = d.done || 0;
+    const pct = total ? Math.min(100, Math.round((done / total) * 100)) : 8;
+    $('#bar i').style.width = pct + '%';
+    const text = d.message || d.phase || '正在读取…';
+    if (text !== last) {
+      last = text;
+      say(`${text}${d.new ? ` · 新增 ${d.new} 条` : ''}`, 'ok');
+    }
+    if (!d.running) {
+      if (d.error) {
+        say('同步出错：' + d.error + '。可以稍后在应用里点「更新订阅」重试。', 'err');
+        $('#skip').style.display = 'block';
+      } else {
+        say(`好了，${d.up_count || 0} 个 UP、${d.video_count || 0} 条视频。`, 'ok');
+        $('#bar i').style.width = '100%';
+        setTimeout(() => { location.href = '/'; }, 900);
+      }
+      syncing = false;
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 900));
+  }
+}
+
+$('#go').onclick = start;
+$('#sess').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) start();
+});
+$('#skiplink').onclick = () => { location.href = '/?force=1'; };
+$('#sess').focus();
+</script>
+</body>
+</html>
