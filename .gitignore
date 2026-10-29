@@ -1,0 +1,21 @@
+# ===== 个人数据：绝不进版本库 =====
+# B站登录凭证（含 sessdata 登录态，泄露等于公开账号）
+config.json
+# 关注列表 / 视频库 / 分类结果 / 弹幕缓存 / 运行日志
+data/
+# 浏览器 profile（含 cookie、密码、历史记录）
+window_profile/
+# 分发打包（内含全部 data，体积大且含个人数据）
+dist/
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+
+# ===== 日志 =====
+*.log
+
+# ===== 系统 / 编辑器 =====
+.DS_Store
+Thumbs.db
